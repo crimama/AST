@@ -23,7 +23,7 @@ def train(teacher,trainloader,save_dir):
     config_dict['Teacher/Student'] = 'Teacher'
     for i in range(len(config)):
         config_dict[config[i]] = __import__('config').__dict__[f'{config[i]}']
-    wandb.init(name=save_dir.split('/')[-1],config=config_dict)
+    wandb.init(name=save_dir.split('/')[-1]+'_teacher',config=config_dict)
     
     
     #! Train 
@@ -68,7 +68,7 @@ def train(teacher,trainloader,save_dir):
             best_loss = mean_train_loss
             torch.save(teacher,save_dir + '/teacher_best.pt')
     torch.save(teacher,save_dir + '/teacher_last.pt')
-
+    wandb.finish()
 
 if __name__ == "__main__":
     all_classes = [d for d in os.listdir(c.dataset_dir) if os.path.isdir(os.path.join(c.dataset_dir, d))]
