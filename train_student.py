@@ -6,12 +6,26 @@ from src.utils import *
 from tqdm import tqdm 
 import os 
 import numpy as np 
+import pandas as pd 
+import wandb 
+
 def train(teacher,student,trainloader,save_dir):
-    #save path     
+    #! save dir 
     if not os.path.exists(save_dir):
         os.makedirs(save_dir)
     else:
         pass 
+    
+    #! wandb 
+    config = pd.Series(dir(c))[pd.Series(dir(c)).apply(lambda x : '__' not in x )].values
+    config_dict = {} 
+    config_dict['class_name'] = save_dir.split('/')[-1]
+    config_dict['Teacher/Student'] = 'Student'
+    for i in range(len(config)):
+        config_dict[config[i]] = __import__('config').__dict__[f'{config[i]}']
+    wandb.init(name=save_dir.split('/')[-1]+'_student',config=config_dict)
+    
+    #! train 
     best_loss = np.inf 
     optimizer = torch.optim.Adam(student.net.parameters(), lr=c.lr, eps=1e-08, weight_decay=1e-5)
     for epoch in tqdm(range(c.meta_epochs)):
@@ -20,7 +34,7 @@ def train(teacher,student,trainloader,save_dir):
         train_loss = []
         if c.verbose:
             print(f'\nTrain epoch {epoch}')
-        for sub_epoch in tqdm(range(c.sub_epochs)):
+        for sub_epoch in range(c.sub_epochs):
             train_loss = [] 
             for i,data in enumerate(trainloader):
                 optimizer.zero_grad()
@@ -53,3 +67,24 @@ def train(teacher,student,trainloader,save_dir):
             best_loss = mean_train_loss
             torch.save(student,save_dir + '/student_best.pt')
     torch.save(student,save_dir + '/student_last.pt')
+    wandb.finish()
+
+if __name__ == "__main__":
+    all_classes = [d for d in os.listdir(c.dataset_dir) if os.path.isdir(os.path.join(c.dataset_dir, d))]
+    all_classes.remove('.ipynb_checkpoints')
+    all_classes.remove('split_csv')
+
+    dataset_dir = c.dataset_dir
+    mode = 'feature'
+
+    for class_name in all_classes:
+    #for class_name in ['cable']:
+        print(f'\n Class : {class_name}')
+        save_dir = os.path.join('./saved_models',dataset_dir.split('/')[-1],class_name)
+        
+        trainset = CombiDataset(dataset_dir,class_name,mode,'train',device=c.device)
+        trainloader = make_loader(trainset,shuffle=True)
+        
+        teacher = torch.load(f'./saved_models/MVtecAD/{class_name}/teacher_best.pt').to(c.device)
+        student = Model(nf=not c.asymmetric_student, channels_hidden=c.channels_hidden_student, n_blocks=c.n_st_blocks).to(c.device)
+        train(teacher,student,trainloader,save_dir)
