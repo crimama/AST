@@ -76,7 +76,7 @@ if __name__ == "__main__":
     all_classes.remove('split_csv')
 
     dataset_dir = c.dataset_dir
-    mode = 'feature'
+    mode = c.data_mode
 
     for class_name in all_classes:
     #for class_name in ['cable']:
