@@ -15,7 +15,7 @@ def train(teacher,trainloader,save_dir):
     else:
         pass 
     #! wandb 
-    wandb.init()
+    
     optimizer = torch.optim.Adam(teacher.net.parameters(),lr=c.lr,eps=1e-08,weight_decay=1e-5)
     best_loss = np.inf 
     #for epoch in tqdm(range(c.total_epochs)):
