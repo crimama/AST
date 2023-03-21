@@ -26,3 +26,19 @@ This is unofficial implementation of "Asymmetric student-teacher networks for in
 | carpet | 0.972 | 0.972 | 0.975 |
 | bottle | 0.998 | 0.994 | 1 |
 | cable | 0.992 | 0.939 | 0.985 |
+
+## MVtecAD-3D Image-level AUROC 
+
+|  | mean | max |
+| --- | --- | --- |
+| foam | 0.864375 | 0.89875 |
+| tire | 0.68092 | 0.665287 |
+| peach | 0.821843 | 0.993832 |
+| cable_gland | 0.910783 | 0.958402 |
+| carrot | 0.8656 | 0.992985 |
+| rope | 0.927989 | 0.880435 |
+| potato | 0.666502 | 0.935277 |
+| cookie | 0.93516 | 0.992718 |
+| bagel | 0.855888 | 0.910124 |
+| dowel | 0.984837 | 0.95858 |
+| AVerage | 0.85139 | 0.918639 |
