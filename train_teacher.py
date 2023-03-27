@@ -25,7 +25,6 @@ def train(teacher,trainloader,save_dir):
         config_dict[config[i]] = __import__('config').__dict__[f'{config[i]}']
     wandb.init(name=save_dir.split('/')[-1]+'_teacher',config=config_dict)
     
-    
     #! Train 
     optimizer = torch.optim.Adam(teacher.net.parameters(),lr=c.lr,eps=1e-08,weight_decay=1e-5)
     best_loss = np.inf 
@@ -72,11 +71,8 @@ def train(teacher,trainloader,save_dir):
 
 if __name__ == "__main__":
     all_classes = [d for d in os.listdir(c.dataset_dir) if os.path.isdir(os.path.join(c.dataset_dir, d))]
-    all_classes.remove('.ipynb_checkpoints')
-    all_classes.remove('split_csv')
-
     dataset_dir = c.dataset_dir
-    mode = 'feature'
+    mode = c.data_mode
 
     for class_name in all_classes:
     #for class_name in ['cable']:

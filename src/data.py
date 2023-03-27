@@ -199,7 +199,6 @@ class XYZset(Dataset):
         #depth image dxtract 
         depth = xyz[:,:,-1]
         #fill gaps 
-        
         for _ in range(c.n_fills):
             depth = fill_gaps(depth)
         

@@ -21,9 +21,12 @@ def eval(teacher,student,testloader):
         with torch.no_grad():    
             z_t,jac_t = teacher(img,depth)
             z_s,jac_s = student(img,depth)
-        
-        st_loss = get_st_loss(z_t,z_s,fg,per_sample=True)
-        st_pixel = get_st_loss(z_t,z_s,fg,per_pixel=True)
+        if not c.use_3D_dataset:
+            st_loss = get_st_loss(z_t,z_s,fg,per_sample=True)
+            st_pixel = get_st_loss(z_t,z_s,fg,per_pixel=True)
+        else:
+            st_loss = get_st_loss(z_t,z_s,fg_down,per_sample=True)
+            st_pixel = get_st_loss(z_t,z_s,fg_down,per_pixel=True)
     
         #save loss 
         mean_image_loss.extend(t2np(st_loss))
