@@ -25,7 +25,11 @@ def train(teacher,student,trainloader,save_dir):
         config_dict[config[i]] = __import__('config').__dict__[f'{config[i]}']
     wandb.init(name=save_dir.split('/')[-1]+'_student',config=config_dict)
     
+<<<<<<< HEAD
 `#! train 
+=======
+#! train 
+>>>>>>> d0dd9e0e10881f8569dc59fccab28c874299d4d1
     best_loss = np.inf 
     optimizer = torch.optim.Adam(student.net.parameters(), lr=c.lr, eps=1e-08, weight_decay=1e-5)
     for epoch in tqdm(range(c.meta_epochs)):
@@ -84,6 +88,10 @@ if __name__ == "__main__":
         trainset = CombiDataset(dataset_dir,class_name,mode,'train',device=device)
         trainloader = make_loader(trainset,shuffle=True)
         
+<<<<<<< HEAD
         teacher = torch.load(f'{save_dir}/teacher_best.pt').to(device)
+=======
+        teacher = torch.load(f'./saved_models/MVtecAD/{class_name}/teacher_best.pt').to(device)
+>>>>>>> d0dd9e0e10881f8569dc59fccab28c874299d4d1
         student = Model(nf=not c.asymmetric_student, channels_hidden=c.channels_hidden_student, n_blocks=c.n_st_blocks).to(device)
         train(teacher,student,trainloader,save_dir)

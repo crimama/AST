@@ -1,15 +1,21 @@
-# device settings
+
+#! device settings
 device = 'cuda:0' # or 'cpu'
 
+<<<<<<< HEAD:config_2d.py
 # data settings
 dataset_dir = '/Volume/Dataset/MVtecAD' # parent directory of class folders
+=======
+#! data settings
+dataset_dir = '/Volume/Dataset/MVtecAD3D' # parent directory of class folders
+>>>>>>> d0dd9e0e10881f8569dc59fccab28c874299d4d1:config_3d.py
 feature_dir = 'data/features/' # directory where features are stored and loaded from
 use_3D_dataset = False # is MVTec 3D used?
 pre_extracted = True # were feature pre-extracted with extract_features? (recommended)
 modelname = "my_experiment" # export evaluations/logs with this name
 print(modelname)
 
-# inputs
+#! inputs
 img_len = 768 # width/height of input image
 img_size = (img_len, img_len) 
 img_dims = [3] + list(img_size)
@@ -25,23 +31,33 @@ if not use_3D_dataset:
     mode = 'RGB' # force RGB if no 3D data is available
 else:
     mode = ['RGB', 'depth', 'combi'][2]
+<<<<<<< HEAD:config_2d.py
 data_mode = 'feature'    
 
+=======
+data_mode = 'feature_combi'
+    
+>>>>>>> d0dd9e0e10881f8569dc59fccab28c874299d4d1:config_3d.py
 n_feat = {'RGB': img_feat_dims, 'depth': depth_channels, 'combi': img_feat_dims + depth_channels}[mode]
 
 training_mask = (mode != 'RGB') # use foreground mask for training?
 eval_mask = (mode != 'RGB') # use foreground mask for evaluation?
 
+<<<<<<< HEAD:config_2d.py
 # 3D settings
 dilate_mask = False
+=======
+#! 3D settings
+dilate_mask = True
+>>>>>>> d0dd9e0e10881f8569dc59fccab28c874299d4d1:config_3d.py
 dilate_size = 8
 n_fills = 3
 bg_thresh = 7e-3
 
-# transformation settings
+#! transformation settings
 norm_mean, norm_std = [0.485, 0.456, 0.406], [0.229, 0.224, 0.225]
 
-# network hyperparameters
+#! network hyperparameters
 clamp = 1.9 # clamping parameter
 n_coupling_blocks = 4 # higher = more flexible = more unstable
 channels_hidden_teacher = 64 # number of neurons in hidden layers of internal networks
@@ -53,7 +69,7 @@ pos_enc_dim = 32 # number of dimensions of positional encoding
 asymmetric_student = True
 n_st_blocks = 4 # number of residual blocks in student
 
-# training parameters
+#! training parameters
 lr = 2e-4 # learning rate
 batch_size = 8
 eval_batch_size = batch_size * 2

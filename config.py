@@ -26,8 +26,13 @@ if not use_3D_dataset:
     mode = 'RGB' # force RGB if no 3D data is available
 else:
     mode = ['RGB', 'depth', 'combi'][2]
+<<<<<<< HEAD
 data_mode = 'feature_combi'
     
+=======
+data_mode = 'feature'    
+
+>>>>>>> d0dd9e0e10881f8569dc59fccab28c874299d4d1
 n_feat = {'RGB': img_feat_dims, 'depth': depth_channels, 'combi': img_feat_dims + depth_channels}[mode]
 
 training_mask = (mode != 'RGB') # use foreground mask for training?
@@ -60,7 +65,11 @@ batch_size = 8
 eval_batch_size = batch_size * 2
 # total epochs = meta_epochs * sub_epochs
 # evaluation after <sub_epochs> epochs
+<<<<<<< HEAD
 meta_epochs = 9 # total epochs = meta_epochs * sub_epochs
+=======
+meta_epochs = 5 # total epochs = meta_epochs * sub_epochs
+>>>>>>> d0dd9e0e10881f8569dc59fccab28c874299d4d1
 sub_epochs = 24 #batch_size # evaluate after this number of epochs
 total_epochs = meta_epochs * sub_epochs
 
