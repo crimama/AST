@@ -8,6 +8,16 @@ import os
 import numpy as np 
 import pandas as pd 
 import wandb 
+import random 
+from torchvision import transforms 
+
+random_seed = c.seed 
+torch.manual_seed(random_seed)
+torch.cuda.manual_seed(random_seed)
+torch.backends.cudnn.deterministic = True
+torch.backends.cudnn.benchmark = False
+np.random.seed(random_seed)
+random.seed(random_seed)
 
 def train(teacher,student,trainloader,save_dir):
     #! save dir 
@@ -25,9 +35,11 @@ def train(teacher,student,trainloader,save_dir):
         config_dict[config[i]] = __import__('config').__dict__[f'{config[i]}']
     wandb.init(name=save_dir.split('/')[-1]+'_student',config=config_dict)
     
-#! train 
+#! train setting 
     best_loss = np.inf 
     optimizer = torch.optim.Adam(student.net.parameters(), lr=c.lr, eps=1e-08, weight_decay=1e-5)
+    scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max= c.meta_epochs * c.sub_epochs)
+#! train     
     for epoch in tqdm(range(c.meta_epochs)):
         student.train()
         teacher.eval()
@@ -39,7 +51,7 @@ def train(teacher,student,trainloader,save_dir):
             for i,data in enumerate(trainloader):
                 optimizer.zero_grad()
 #! load data 
-                img,label,depth,fg = to_device(data,device)
+                img,label,gt,depth,fg = to_device(data,c.device)
                 fg = dilation(fg,c.dilate_size)
                 fg_down = downsampling(fg, (c.map_len, c.map_len), bin=False)
 #! inference 
@@ -57,16 +69,20 @@ def train(teacher,student,trainloader,save_dir):
                         trainloader.dataset.save(detach(data))
             if trainloader.dataset.init_mode:
                     trainloader.dataset.init_mode = False
+                    
+            if c.use_scheduler:
+                scheduler.step()
 #! Logging                     
             mean_train_loss = np.mean(train_loss)
             if sub_epoch % 4 == 0:  # and epoch == 0:
                     print('Epoch: {:d}.{:d} \t train loss: {:.4f}'.format(epoch, sub_epoch, mean_train_loss))
-            wandb.log({'Student_Epoch_loss' : mean_train_loss})
+            wandb.log({'Student_Epoch_loss' : mean_train_loss,
+                       'learning rate': optimizer.param_groups[0]['lr']})
             
         if best_loss > mean_train_loss:
             best_loss = mean_train_loss
-            torch.save(student,save_dir + '/student_best.pt')
-    torch.save(student,save_dir + '/student_last.pt')
+            torch.save(student,save_dir + '/student_best_new.pt')
+    torch.save(student,save_dir + '/student_last_new.pt')
     wandb.finish()
 
 if __name__ == "__main__":
@@ -77,15 +93,21 @@ if __name__ == "__main__":
     dataset_dir = c.dataset_dir
     mode = c.data_mode
     device = c.device 
-    #device = 'cuda:1'
+    
+    img_transform =  transforms.Compose([transforms.ToTensor(),
+                                            transforms.Resize((c.img_size)),
+                                            transforms.Normalize(c.norm_mean,c.norm_std)])
+    
+    
+    
     for class_name in all_classes:
-    #for class_name in ['cable']:
+    #for class_name in ['bottle']:
         print(f'\n Class : {class_name}')
         save_dir = os.path.join('./saved_models',dataset_dir.split('/')[-1],class_name)
         
-        trainset = CombiDataset(dataset_dir,class_name,mode,'train',device=device)
+        trainset = CombiDataset(dataset_dir,class_name,mode,'train',c.device,img_transform)
         trainloader = make_loader(trainset,shuffle=True)
         
-        teacher = torch.load(f'./saved_models/MVtecAD/{class_name}/teacher_best.pt').to(device)
+        teacher = torch.load(f'./saved_models/MVtecAD/{class_name}/teacher_best_new.pt').to(device)
         student = Model(nf=not c.asymmetric_student, channels_hidden=c.channels_hidden_student, n_blocks=c.n_st_blocks).to(device)
         train(teacher,student,trainloader,save_dir)
