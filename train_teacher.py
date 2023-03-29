@@ -65,8 +65,8 @@ def train(teacher,trainloader,save_dir):
 
         if best_loss > mean_train_loss:
             best_loss = mean_train_loss
-            torch.save(teacher,save_dir + '/teacher_best.pt')
-    torch.save(teacher,save_dir + '/teacher_last.pt')
+            torch.save(teacher,save_dir + '/teacher_new.pt')
+    torch.save(teacher,save_dir + '/teacher_new.pt')
     wandb.finish()
 
 if __name__ == "__main__":

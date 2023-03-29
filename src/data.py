@@ -213,6 +213,7 @@ class XYZset(Dataset):
         #downsampling 
         depth = self.transform(depth, c.depth_len, binary=False)
         fg = self.transform(fg, c.depth_len, binary=True)
+        
         #pixel unshuffle 
         depth = self.unshuffle(depth)
         
