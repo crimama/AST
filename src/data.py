@@ -10,25 +10,28 @@ from src.freia_funcs import *
 import tifffile 
 
 class CombiDataset(Dataset):
-    def __init__(self,dataset_dir,class_name,mode,train,device):
+    def __init__(self,dataset_dir,class_name,mode,train,device,transform):
         super(CombiDataset).__init__()
         self.mode = mode 
+        self.train = train 
         if self.mode =='rgb':
-            self.rgbset = RGBset(dataset_dir,class_name,'rgb',train,device)
+            self.rgbset = RGBset(dataset_dir,class_name,'rgb',train,device,transform)
         elif self.mode == 'rgb_combi':
-            self.rgbset = RGBset(dataset_dir,class_name,'rgb',train,device)
+            self.rgbset = RGBset(dataset_dir,class_name,'rgb',train,device,transform)
             self.xyzset = XYZset(dataset_dir,class_name,train)
         elif self.mode == 'feature':
-            self.rgbset = RGBset(dataset_dir,class_name,'feature',train,device)
+            self.rgbset = RGBset(dataset_dir,class_name,'feature',train,device,transform)
         elif self.mode == 'feature_combi':
-            self.rgbset = RGBset(dataset_dir,class_name,'feature',train,device)
+            self.rgbset = RGBset(dataset_dir,class_name,'feature',train,device,transform)
             self.xyzset = XYZset(dataset_dir,class_name,train)
+            
             
         #self.rgbset,self.xyzset = self.load_dataset(dataset_dir,class_name,mode,train,device)
         self.saved_img = [] 
         self.saved_label = [] 
         self.saved_depth = [] 
         self.saved_fg = []
+        self.saved_gt = [] 
         self.init_mode = True 
     
     def __len__(self):
@@ -39,20 +42,22 @@ class CombiDataset(Dataset):
         self.saved_label.extend(data[1])
         self.saved_depth.extend(data[2])
         self.saved_fg.extend(data[3])
+        self.saved_gt.extend(data[4])
         
     
     def __getitem__(self,idx):
         if self.init_mode:
             if 'combi' in self.mode:
-                img,label = self.rgbset.__getitem__(idx) 
+                img,label,gt = self.rgbset.__getitem__(idx) 
                 depth,fg = self.xyzset.__getitem__(idx)
             else:
-                img,label = self.rgbset.__getitem__(idx) 
+                img,label,gt = self.rgbset.__getitem__(idx) 
                 depth,fg = torch.zeros_like(img),torch.zeros_like(img)
         else:
-            img,label = self.saved_img[idx],self.saved_label[idx]
+            img,label,gt = self.saved_img[idx],self.saved_label[idx],self.saved_gt[idx]
             depth,fg  = self.saved_depth[idx],self.saved_fg[idx]
-        return img,label,depth,fg
+        
+        return img,label,gt,depth,fg
     
 
 def make_loader(dataset,shuffle=False):
@@ -71,37 +76,60 @@ def load_rgb_dataset(dataset_dir,class_name,train='train'):
     return dataset 
 
 class RGBset(Dataset):
-    def __init__(self,dataset_dir,class_name,mode='feature',train='train',device='cpu'):
+    def __init__(self,dataset_dir,class_name,mode,train,device,transform):
         super(RGBset).__init__()
+        # dataset 
         self.extractor = FeatureExtractor(layer_idx=c.extract_layer).to(device)
         self.dataset = load_rgb_dataset(dataset_dir,class_name,train=train)
-        self.mode= mode 
-        self.device = device
+        self.img_dirs = self.dataset.imgs
+        self.idx_to_class = {value : key for key,value in self.dataset.class_to_idx.items()}
+        self.class_to_idx = self.dataset.class_to_idx
+        
+        # data 
+        self.train = train 
+        self.mode = mode
+        self.device = device 
+        
+        #transform 
+        self.img_transform = transform 
+        #self.gt_transform =  transforms.Compose([transforms.ToTensor(),
+        #                                        transforms.Resize((c.img_size)),
+        #                                        transforms.Normalize(c.norm_mean,c.norm_std)])
         
     def __len__(self):
         return len(self.dataset)
     
-    def to(self,device):
-        self.extractor = self.extractor.to(device)
-        self.device = device
     
-    def feature_mode(self,idx):
-        img,label = self.dataset.__getitem__(idx)
-        self.extractor.eval()
-        with torch.no_grad():
-            z = self.extractor(img[None,:].to(self.device))
-        return z,label
+    def gt_transform(self,gt):
+        gt = cv2.cvtColor(gt,cv2.COLOR_BGR2GRAY)
+        gt = gt/255. 
+        gt = cv2.resize(gt,dsize=(c.depth_len,c.depth_len))
+        gt[gt>=0.5] = 1
+        gt[gt<0.5] = 0 
+        return gt 
     
-    def rgb_mode(self,idx):
-        img,label = self.dataset.__getitem__(idx)
-        return img,label 
-    
-    def __getitem__(self,idx):
+    def __getitem__(self, idx):
+        img_dir,label = self.img_dirs[idx]
+        
+        # img 
+        img = cv2.imread(img_dir)
+        img = self.img_transform(img)
+        
         if self.mode =='feature':
-            x,label = self.feature_mode(idx)
+            with torch.no_grad():
+                img = self.extractor(img[None,:].to(self.device))
+            img = img[0].detach()
+        # label
+        
+        # gt 
+        if self.idx_to_class[label] != 'good':
+            gt = cv2.imread(img_dir.replace('test','ground_truth')[:-4] + '_mask.png')
+            gt = self.gt_transform(gt)
+            # gt = gt_transform(gt)
         else:
-            x,label = self.rgb_mode(idx)
-        return x[0],label 
+            gt = np.zeros((c.depth_len,c.depth_len))
+            
+        return img,label,gt 
     
 
 def load_xyz_dirs(dataset_dir,class_name,train='train'):
