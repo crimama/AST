@@ -1,5 +1,6 @@
 # device settings
 device = 'cuda:0' # or 'cpu'
+seed = 42 
 
 # data settings
 dataset_dir = '/Volume/Dataset/MVtecAD' # parent directory of class folders
@@ -59,8 +60,9 @@ batch_size = 8
 eval_batch_size = batch_size * 2
 # total epochs = meta_epochs * sub_epochs
 # evaluation after <sub_epochs> epochs
-meta_epochs = 5 # total epochs = meta_epochs * sub_epochs
+meta_epochs = 30 # total epochs = meta_epochs * sub_epochs
 sub_epochs = 24 #batch_size # evaluate after this number of epochs
+use_scheduler = False
 
 # output settings
 verbose = True
